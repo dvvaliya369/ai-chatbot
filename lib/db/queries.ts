@@ -38,10 +38,13 @@ import { generateHashedPassword } from "./utils";
 // https://authjs.dev/reference/adapter/drizzle
 
 // biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+const client = process.env.POSTGRES_URL ? postgres(process.env.POSTGRES_URL) : null;
+const db = client ? drizzle(client) : null;
 
 export async function getUser(email: string): Promise<User[]> {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.select().from(user).where(eq(user.email, email));
   } catch (_error) {
@@ -53,6 +56,9 @@ export async function getUser(email: string): Promise<User[]> {
 }
 
 export async function createUser(email: string, password: string) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   const hashedPassword = generateHashedPassword(password);
 
   try {
@@ -63,6 +69,9 @@ export async function createUser(email: string, password: string) {
 }
 
 export async function createGuestUser() {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   const email = `guest-${Date.now()}`;
   const password = generateHashedPassword(generateUUID());
 
@@ -90,6 +99,9 @@ export async function saveChat({
   title: string;
   visibility: VisibilityType;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.insert(chat).values({
       id,
@@ -104,6 +116,9 @@ export async function saveChat({
 }
 
 export async function deleteChatById({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
@@ -123,6 +138,9 @@ export async function deleteChatById({ id }: { id: string }) {
 }
 
 export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const userChats = await db
       .select({ id: chat.id })
@@ -164,6 +182,9 @@ export async function getChatsByUserId({
   startingAfter: string | null;
   endingBefore: string | null;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const extendedLimit = limit + 1;
 
@@ -230,6 +251,9 @@ export async function getChatsByUserId({
 }
 
 export async function getChatById({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
     if (!selectedChat) {
@@ -243,6 +267,9 @@ export async function getChatById({ id }: { id: string }) {
 }
 
 export async function saveMessages({ messages }: { messages: DBMessage[] }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.insert(message).values(messages);
   } catch (_error) {
@@ -257,6 +284,9 @@ export async function updateMessage({
   id: string;
   parts: DBMessage["parts"];
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.update(message).set({ parts }).where(eq(message.id, id));
   } catch (_error) {
@@ -265,6 +295,9 @@ export async function updateMessage({
 }
 
 export async function getMessagesByChatId({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db
       .select()
@@ -288,6 +321,9 @@ export async function voteMessage({
   messageId: string;
   type: "up" | "down";
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const [existingVote] = await db
       .select()
@@ -311,6 +347,9 @@ export async function voteMessage({
 }
 
 export async function getVotesByChatId({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.select().from(vote).where(eq(vote.chatId, id));
   } catch (_error) {
@@ -334,6 +373,9 @@ export async function saveDocument({
   content: string;
   userId: string;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db
       .insert(document)
@@ -352,6 +394,9 @@ export async function saveDocument({
 }
 
 export async function getDocumentsById({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const documents = await db
       .select()
@@ -369,6 +414,9 @@ export async function getDocumentsById({ id }: { id: string }) {
 }
 
 export async function getDocumentById({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const [selectedDocument] = await db
       .select()
@@ -392,6 +440,9 @@ export async function deleteDocumentsByIdAfterTimestamp({
   id: string;
   timestamp: Date;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     await db
       .delete(suggestion)
@@ -419,6 +470,9 @@ export async function saveSuggestions({
 }: {
   suggestions: Suggestion[];
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.insert(suggestion).values(suggestions);
   } catch (_error) {
@@ -434,6 +488,9 @@ export async function getSuggestionsByDocumentId({
 }: {
   documentId: string;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db
       .select()
@@ -448,6 +505,9 @@ export async function getSuggestionsByDocumentId({
 }
 
 export async function getMessageById({ id }: { id: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.select().from(message).where(eq(message.id, id));
   } catch (_error) {
@@ -465,6 +525,9 @@ export async function deleteMessagesByChatIdAfterTimestamp({
   chatId: string;
   timestamp: Date;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const messagesToDelete = await db
       .select({ id: message.id })
@@ -505,6 +568,9 @@ export async function updateChatVisibilityById({
   chatId: string;
   visibility: "private" | "public";
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (_error) {
@@ -522,6 +588,9 @@ export async function updateChatTitleById({
   chatId: string;
   title: string;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     return await db.update(chat).set({ title }).where(eq(chat.id, chatId));
   } catch (error) {
@@ -537,6 +606,9 @@ export async function getMessageCountByUserId({
   id: string;
   differenceInHours: number;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const twentyFourHoursAgo = new Date(
       Date.now() - differenceInHours * 60 * 60 * 1000
@@ -571,6 +643,9 @@ export async function createStreamId({
   streamId: string;
   chatId: string;
 }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     await db
       .insert(stream)
@@ -584,6 +659,9 @@ export async function createStreamId({
 }
 
 export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
+  if (!db) {
+    throw new ChatSDKError("bad_request:database", "Database not configured");
+  }
   try {
     const streamIds = await db
       .select({ id: stream.id })

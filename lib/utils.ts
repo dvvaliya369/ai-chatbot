@@ -49,8 +49,8 @@ export async function fetchWithErrorHandlers(
 }
 
 export function getLocalStorage(key: string) {
-  if (typeof window !== 'undefined') {
-    return JSON.parse(localStorage.getItem(key) || '[]');
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return JSON.parse(window.localStorage.getItem(key) || '[]');
   }
   return [];
 }
