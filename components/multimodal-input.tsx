@@ -118,7 +118,10 @@ function PureMultimodalInput({
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     "input",
-    ""
+    "",
+    {
+      initializeWithValue: false,
+    }
   );
 
   useEffect(() => {
