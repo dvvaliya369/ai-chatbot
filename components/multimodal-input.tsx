@@ -15,7 +15,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useLocalStorage, useWindowSize } from "usehooks-ts";
+import { useWindowSize } from "usehooks-ts";
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -116,10 +116,23 @@ function PureMultimodalInput({
     }
   }, []);
 
-  const [localStorageInput, setLocalStorageInput] = useLocalStorage(
-    "input",
-    ""
-  );
+  const [localStorageInput, setLocalStorageInput] = useState("");
+  const [isClient, setIsClient] = useState(false);
+
+  // Set isClient flag after mount to avoid SSR issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Load from localStorage only on client
+  useEffect(() => {
+    if (isClient && typeof window !== "undefined") {
+      const stored = localStorage.getItem("input");
+      if (stored) {
+        setLocalStorageInput(stored);
+      }
+    }
+  }, [isClient]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -133,9 +146,12 @@ function PureMultimodalInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adjustHeight, localStorageInput, setInput]);
 
+  // Save to localStorage only on client
   useEffect(() => {
-    setLocalStorageInput(input);
-  }, [input, setLocalStorageInput]);
+    if (isClient && typeof window !== "undefined") {
+      localStorage.setItem("input", input);
+    }
+  }, [input, isClient]);
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
@@ -164,7 +180,9 @@ function PureMultimodalInput({
     });
 
     setAttachments([]);
-    setLocalStorageInput("");
+    if (typeof window !== "undefined") {
+      localStorage.setItem("input", "");
+    }
     resetHeight();
     setInput("");
 
@@ -177,7 +195,6 @@ function PureMultimodalInput({
     attachments,
     sendMessage,
     setAttachments,
-    setLocalStorageInput,
     width,
     chatId,
     resetHeight,
